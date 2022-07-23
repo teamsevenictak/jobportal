@@ -1,5 +1,5 @@
 const { default: mongoose } = require('mongoose');
-const mongoose = require ('mongoose');
+const Mongoose = require('mongoose');
 //mongoose.connect('mongodb://localhost:27017/AlumniPortal');
 mongoose.connect(process.env.MONGODB_URI, { useNewUrlParser: true });
 const Schema = mongoose.Schema;
