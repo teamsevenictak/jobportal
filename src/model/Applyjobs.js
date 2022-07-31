@@ -5,13 +5,13 @@ const Mongoose = require('mongoose');
 mongoose.connect('mongodb+srv://alumniportal:PfR1cnUoGzrhQBhr@alumni.dmlb0.mongodb.net/jobportal?retryWrites=true&w=majority');
 
 const Schema = mongoose.Schema;
-const User = new Schema({
-    firstname   : String,
-    email       : String,
-    phoneno     : String,
-    password    : String,
-    userrole    : String,
-    terms       : Boolean
+const Applyjob = new Schema({
+    name        : String,    
+    link        :  String,
+    postID      :  String,
+    AlumnId     :  String,
+    Dateofsub   :  Date,
+    Visibility  : Number
 })
-const userdetail = mongoose.model('user',User);
-module.exports = userdetail;
+const applyjob = mongoose.model('applied',Applyjob);
+module.exports = applyjob;
