@@ -17,7 +17,7 @@ app.use(express.static(`./dist/frontend`));
 app.use(cors());
 const jwt = require('jsonwebtoken');
 app.use(resumeupload());
-//app.use(express.static("files"));
+app.use(express.static("files"));
 app.use(bodyParser.json());
 app.use(express.json());
 
@@ -69,9 +69,8 @@ app.post("/api/resume-submit", (req, res) => {
           postID: req.body.postID,
           AlumnId: req.body.alumniID,
           Dateofsub:dateofsub,
-          Visibility:0
+          Visibility:0,
       }
-  console.log(applyjobs);
       var job = new Applyjob(applyjobs)
       job.save()
       .then(job => {
@@ -105,9 +104,8 @@ app.post("/api/resume-upload", (req, res) => {
           postID: req.body.postID,
           AlumnId: req.body.alumniID,
           Dateofsub:dateofsub,
-          Visibility:0
+          Visibility:0,
       }
-  console.log(applyjobs);
       var job = new Applyjob(applyjobs)
       job.save()
       .then(job => {
@@ -159,6 +157,15 @@ function LoggedUserID(req,res){
     return req.userId = payload.id;
   }
 }
+
+app.get('/api/getuser',verifyToken,function(req,res){  
+  id = this.loggedUser;
+  UserDetail.findOne ({"_id":id})
+    .then(function(userDetail){
+        return res.send(userDetail);
+    })
+  
+})
 app.post('/api/login', (req, res) => {
     let userData = req.body;
     res.header("Access-Control-Allow-Origin", "*");
@@ -197,10 +204,65 @@ app.get('/api/getapplicatins',verifyToken,function(req,res){
   res.header("Access-Control-Allow-Origin", "*");
   res.header("Access-Control-Allow-Methods: GET,POST,PUT,DELETE");
   id = this.loggedUser;
-  Applyjob.find()
-  .then(function(applyjob){
-      return res.send(applyjob);
-  })
+    if(id=='fetchall'){
+      Applyjob.aggregate([
+        {
+          $lookup: {
+            "let": { "postObjID": { "$toObjectId": "$postID" } },
+            from: "postjobs",
+            "pipeline": [
+              { "$match": { "$expr": { "$eq": [ "$_id", "$$postObjID" ] } } }
+            ],
+            as: "applctndetails"
+          }
+        },
+        {
+          $unwind: "$applctndetails"
+       },
+       
+      ])
+        .then(function(applyjob){
+          return res.send(applyjob);
+        })
+        .catch((error) => {
+          console.log(error);
+        });
+   }
+  else if(id!=0 && id!=undefined){
+    Applyjob.aggregate([
+      {
+        $lookup: {
+          "let": { "postObjID": { "$toObjectId": "$postID"},visibility: "$Visibility",userId:"$userId"},
+          from: "postjobs",
+          "pipeline": [
+            { "$match":
+            { $expr:
+              { $and:
+                 [
+                   { $eq: [ "$_id",  "$$postObjID" ] },
+                   { $eq: [ 1, "$$visibility" ] },
+                 ]
+              }
+           }
+            }
+          ],
+          as: "applctndetails"
+        }
+      },
+      {
+        $unwind: "$applctndetails"
+     },
+     
+    ])
+      .then(function(applyjob){
+        return res.send(applyjob);
+      })
+      .catch((error) => {
+        console.log(error);
+      });
+   
+  }
+  
  
  
 })
@@ -214,12 +276,19 @@ app.get('/api/latestjobs',function(req,res){
     })
   
 })
+app.get('/api/postbycategory/:id',(req, res) => {
+    id  = req.params.id;
+    Postjob.find({"jobcategory":id,"verified":1})
+      .then(function (jobcategory) {
+        res.send(jobcategory);
+    })  
+})
+
 app.get('/api/postajob',function(req,res){  
     res.header("Access-Control-Allow-Origin", "*");
     res.header("Access-Control-Allow-Methods: GET,POST,PUT,DELETE");
     id=0;
     id = this.loggedUser;
-   
     if(id=='fetchall'){
         Postjob.find()
       .then(function(postajob){
@@ -234,7 +303,6 @@ app.get('/api/postajob',function(req,res){
     }else {
       Postjob.find({"verified":1})
       .then(function(postajob){
-        console.log(postajob);
           return res.send(postajob);
       })
     }
@@ -271,6 +339,46 @@ app.post('/api/addJob',verifyToken, function(req,res){
         res.status(400).send('adding new job failed');
     });
 })
+app.put('/api/editPost',verifyToken, function(req,res){
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Methods: GET,POST,PUT,DELETE");
+  id  = req.body.item._id;
+  companyName     = req.body.item.companyName ,
+  jobRole         = req.body.item.jobRole, 
+  companydetail   = req.body.item.companydetail,
+  jobcategory     = req.body.item.jobcategory,
+  location        = req.body.item.location,
+  experience      = req.body.item.experience,
+  skills          = req.body.item.skills,
+  qualification   = req.body.item.qualification,
+  jobDescription  = req.body.item.jobDescription,
+  lastDate        = req.body.item.lastDate,
+  jobType         = req.body.item.jobType,
+  verified        = 0
+
+
+  Postjob.findByIdAndUpdate({"_id":id},{$set:{
+    "companyName":companyName ,
+    "jobRole": jobRole, 
+    "companydetail": companydetail,
+    "jobcategory": jobcategory,
+    "location": location,
+    "experience": experience,
+    "skills": skills,
+    "qualification": qualification,
+    "jobDescription": jobDescription,
+    "lastDate": lastDate,
+    "jobType": jobType,
+    "verified":0
+    }})
+  .then(job => {
+      
+      res.status(200).json({'job': 'Job edited successfully'});
+  })
+  .catch(err => {
+      res.status(400).send('editing job failed');
+  });
+})
 app.get('/api/jobdetail/:id',(req, res) => {
   id  = req.params.id;
     Postjob.findById({"_id":id})
@@ -297,7 +405,17 @@ app.get('/api/getAppById/',(req, res) => {
 
 })
 
+app.delete('/api/remove/:id',verifyToken,(req, res) => {
+  id  = req.params.id;
+  Postjob.findByIdAndDelete({"_id":id})
+  .then(() => {
+    res.status(200).json({'post': 'post deleted successfully'});
+})
+.catch(err => {
+    res.status(400).send('deleting post failed');
+});
 
+})
 app.put('/api/updateapplicatin',verifyToken, (req, res) => {
   id  = req.body.Appid;
   res.header("Access-Control-Allow-Origin", "*");
@@ -341,7 +459,7 @@ async function main() {
     let transporter = nodemailer.createTransport({
       service: "gmail",   
       auth: {
-        user: 'teamsevenictak@gmail.com',
+        user: 'wishgreeting2022@gmail.com',
         pass: 'mckfxowcmhxcjpcd'
       },
     });
