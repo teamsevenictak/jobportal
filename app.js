@@ -343,18 +343,18 @@ app.put('/api/editPost',verifyToken, function(req,res){
   res.header("Access-Control-Allow-Origin", "*");
   res.header("Access-Control-Allow-Methods: GET,POST,PUT,DELETE");
   id  = req.body.item._id;
-  companyName     = req.body.item.companyName ,
-  jobRole         = req.body.item.jobRole, 
-  companydetail   = req.body.item.companydetail,
-  jobcategory     = req.body.item.jobcategory,
-  location        = req.body.item.location,
-  experience      = req.body.item.experience,
-  skills          = req.body.item.skills,
-  qualification   = req.body.item.qualification,
-  jobDescription  = req.body.item.jobDescription,
-  lastDate        = req.body.item.lastDate,
-  jobType         = req.body.item.jobType,
-  verified        = 0
+  companyName     = req.body.item.companyName ;
+  jobRole         = req.body.item.jobRole; 
+  companydetail   = req.body.item.companydetail;
+  jobcategory     = req.body.item.jobcategory;
+  location        = req.body.item.location;
+  experience      = req.body.item.experience;
+  skills          = req.body.item.skills;
+  qualification   = req.body.item.qualification;
+  jobDescription  = req.body.item.jobDescription;
+  lastDate        = req.body.item.lastDate;
+  jobType         = req.body.item.jobType;
+  verified        = 0;
 
 
   Postjob.findByIdAndUpdate({"_id":id},{$set:{
@@ -459,7 +459,7 @@ async function main() {
     let transporter = nodemailer.createTransport({
       service: "gmail",   
       auth: {
-        user: 'wishgreeting2022@gmail.com',
+        user: 'wishgreeting2022@gmail.com                                  ',
         pass: 'mckfxowcmhxcjpcd'
       },
     });
